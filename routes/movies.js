@@ -25,6 +25,25 @@ router.get('/',async (req,res)=>{
     }
 });
 
+router.get('/:id',async (req,res)=>{
+    try{
+        const movie=await Movie.findById(req.params.id);
+        if(!movie)
+        {
+            return res.status(404).send("Not Found");
+        }
+        else
+        {
+            return res.send(movie);
+        }
+    }
+    catch(err)
+    {
+        console.log(err.message);
+        return;
+    }
+})
+
 router.post('/',async (req,res)=>{
     try{
         const movie={
@@ -68,4 +87,72 @@ router.post('/',async (req,res)=>{
     }
 });
 
+router.put('/:id',async (req,res)=>{
+
+    try{
+        const movie=await Movie.findById(req.params.id);
+        if(!movie)
+        {
+            return res.status(404).send("Movie Not Found !");
+        }
+        const newMovie={
+            title : req.body.title,
+            genreId : req.body.genreId,
+            numberInStock :req.body.numberInStock,
+            dailyRentalRate:req.body.dailyRentalRate
+        }
+        const {error}= validateSchema(newMovie);
+        if(error)
+        {
+            return res.status(400).send("Bad update request");
+        }
+       else
+       {
+           const genre=await Genre.findById(newMovie.genreId);
+           if(!genre)
+           {
+               return res.status(400).send("Invalid Genre");
+           }
+           else
+           {
+               const updatedMovie={
+                   title : newMovie.title,
+                   genre:{
+                       _id : genre._id,
+                       name : genre.name
+                   },
+                   numberInStock:newMovie.numberInStock,
+                   dailyRentalRate:newMovie.dailyRentalRate
+               }
+
+           const ans= await Movie.findByIdAndUpdate(req.params.id,updatedMovie);
+           console.log(ans);
+           return res.send(updatedMovie);
+           }
+       }
+        
+    }
+    catch(err)
+    {
+        console.log(err.message);
+        return;
+    }
+});
+
+router.delete('/:id',async (req,res)=>{
+    try{
+        const movie=await Movie.findById(req.params.id);
+        if(!movie)
+        {
+            return res.status(404).send("Movie Not found");
+        }
+        const ans=await Movie.findByIdAndDelete(req.params.id);
+        return res.send(ans);
+    }
+    catch(err)
+    {
+        console.log(err.message);
+    }
+   
+})
 module.exports=router;

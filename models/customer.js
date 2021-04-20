@@ -37,3 +37,4 @@ function validateSchema(inp)
 
 module.exports.Customer=Customer;
 module.exports.validateSchema=validateSchema;
+module.exports.customerSchema=customerSchema;
