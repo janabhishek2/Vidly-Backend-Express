@@ -1,9 +1,8 @@
 const express=require('express');
 const mongoose=require('mongoose');
-const Joi=require('joi');
+const {Customer,validateSchema}=require('../models/customer');
+const router=express.Router();
 
-const app=express();
-app.use(express.json());
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
     console.log("Connected To DB ... ");
@@ -12,28 +11,6 @@ mongoose.connect('mongodb://localhost/Vidly_Node')
     console.log(err.message);
 });
 
-const customerSchema= new mongoose.Schema({
-    isGold : {
-        type : Boolean,
-        required :true
-    },
-    name : {
-        type : String,
-        required:true,
-        minlength:1,
-        maxlength:25,
-        trim:true,
-    },
-    phone : {
-        type:String,
-        required:true,
-        minlength:10,
-        maxlength:10,
-        trim:true
-    }
-
-})
-const Customer=mongoose.model('Customer',customerSchema);
 
 async function oneTime()
 {
@@ -51,7 +28,7 @@ async function oneTime()
     }
 }
 
-app.get('/api/customers',async (req,res)=>{
+router.get('/',async (req,res)=>{
 
     try{
         const customers=await Customer.find();
@@ -65,7 +42,7 @@ app.get('/api/customers',async (req,res)=>{
 
 });
 
-app.get('/api/customers/:id',async (req,res)=>{
+router.get('/:id',async (req,res)=>{
 
     try{
         const customer=await Customer.find({_id : req.params.id});
@@ -87,17 +64,8 @@ app.get('/api/customers/:id',async (req,res)=>{
     }
 });
 
-const joiSchema={
-    isGold:Joi.boolean().required(),
-    name :Joi.string().min(1).max(25).required(),
-    phone : Joi.string().min(10).max(10).required()
 
-}
-function validateSchema(inp)
-{
-    return Joi.validate(inp,joiSchema);
-}
-app.post('/api/customers',async (req,res)=>{
+router.post('/',async (req,res)=>{
 
     try
     {
@@ -132,7 +100,7 @@ catch(err)
 
 });
 
-app.put('/api/customers/:id',async (req,res)=>{
+router.put('/:id',async (req,res)=>{
 
     try{
         const customer=await Customer.find({_id : req.params.id});
@@ -168,7 +136,7 @@ app.put('/api/customers/:id',async (req,res)=>{
     }
 });
 
-app.delete('/api/customers/:id',async (req,res)=>{
+router.delete('/:id',async (req,res)=>{
 
     try{
 
@@ -191,9 +159,6 @@ app.delete('/api/customers/:id',async (req,res)=>{
     }
 
 
-})
-const port=process.env.PORT || 3000;
+});
 
-app.listen(port, ()=>{
-    console.log("Listening on port  : "+port);
-})
+module.exports=router;

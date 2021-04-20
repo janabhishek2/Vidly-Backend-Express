@@ -1,9 +1,9 @@
 const express = require("express");
-const app = express();
-const Joi = require("joi");
-const { validate } = require("joi/lib/types/object");
+const router = express.Router();
+
+
 const mongoose=require('mongoose');
-app.use(express.json());
+const {Genre, validateSchema} =require('../models/genre');
 
 const genres = [
   { id: 1, name: "Action" },
@@ -21,17 +21,6 @@ mongoose.connect('mongodb://localhost/Vidly_Node')
   console.log(err.message);
 });
 
-const genreSchema=new mongoose.Schema({
-  name : {
-    type :String,
-    required :true,
-    trim :true,
-    maxlength:20,
-    minlength :3
-  }
-})
-
-const Genre = mongoose.model('Genre',genreSchema);
 
 async function oneTime() //call me to reset genres collection
 
@@ -67,7 +56,7 @@ async function oneTime() //call me to reset genres collection
 
   })
 }
-app.get("/api/genres", (req, res) => {
+router.get("/", (req, res) => {
 
   const gs=Genre.find()
   .then(r=>{
@@ -79,7 +68,7 @@ app.get("/api/genres", (req, res) => {
 
 });
 
-app.get("/api/genres/:id", (req, res) => {
+router.get("/:id", (req, res) => {
 
   Genre.find({_id : req.params.id})
   .then(genre=>{
@@ -109,15 +98,9 @@ app.get("/api/genres/:id", (req, res) => {
     res.send(genre);
   } */
 });
-const schema = {
-  name: Joi.string().min(3).max(20).required(),
-};
 
-function validateSchema(inp) {
-  return Joi.validate(inp, schema);
-}
 
-app.post("/api/genres", async (req, res) => {
+router.post("/", async (req, res) => {
 
   const genre = {
     name : req.body.name
@@ -195,7 +178,7 @@ app.post("/api/genres", async (req, res) => {
   } */
 });
 
-app.put("/api/genres/:id",async (req, res) => {
+router.put("/:id",async (req, res) => {
 
   const genre= await Genre.find({_id : req.params.id});
 
@@ -252,7 +235,7 @@ else
   } */
 });
 
-app.delete("/api/genres/:id", async (req, res) => {
+router.delete("/:id", async (req, res) => {
 
   try{
 
@@ -295,7 +278,4 @@ app.delete("/api/genres/:id", async (req, res) => {
 });
 
 
-const port=process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log("Listening on port : " + port);
-});
+module.exports=router;
