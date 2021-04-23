@@ -18,7 +18,14 @@ const genreSchema=new mongoose.Schema({
   };
   
   function validateSchema(inp) {
-    return Joi.validate(inp, schema);
+
+    const res=  Joi.validate(inp,joiSchema);
+    const objectValidation=mongoose.Types.ObjectId.isValid(inp.customerId) && mongoose.Types.ObjectId.isValid(inp.movieId);
+    if(!objectValidation)
+    {
+        res.error+="ObjectId is not Correct";
+    }
+    return res;
   }
 
   module.exports.Genre=Genre,
