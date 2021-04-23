@@ -60,6 +60,11 @@ router.post('/',async (req,res)=>{
         {
             return res.status(400).send("Incorrect Data");
         }
+        /* const objectValidation=mongoose.Types.ObjectId.isValid(rental.customerId) && mongoose.Types.ObjectId.isValid(rental.movieId);
+        if(!objectValidation)
+        {
+            return res.status(400).send("Incorrect Data");
+        } */
         const customer=await Customer.findById(rental.customerId);
         const movie=await Movie.findById(rental.movieId);
 
@@ -88,11 +93,11 @@ router.post('/',async (req,res)=>{
       }
       const ans=  await newRental.save();
       res.send(ans);
-    console.log(ans);
+   
       movie.numberInStock--;
       const ans1=  await movie.save();
-      console.log(ans1);
-       return;
+  
+     return;
     }
     catch(err)
     {
