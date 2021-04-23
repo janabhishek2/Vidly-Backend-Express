@@ -145,5 +145,6 @@ router.delete('/:id',async (req,res)=>{
         res.status(500).send("Some error occured");
         return;
     }
-})
+});
+
 module.exports=router;
