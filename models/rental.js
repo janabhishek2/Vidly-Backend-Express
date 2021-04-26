@@ -35,6 +35,14 @@ const rentalSchema= new mongoose.Schema({
     },
     rentalRate:{
         type :Number
+    },
+    incomeFromRental:{
+        type:Number,
+        default:0
+    },
+    returned:{
+        type:Boolean,
+        default:false
     }
 });
 
@@ -43,8 +51,9 @@ const Rental = mongoose.model('Rental',rentalSchema);
 const joiSchema={
     customerId:Joi.string().required(),
     movieId : Joi.string().required(),  
-
+    returned:Joi.boolean()
 }
+
 function validateSchema(inp)
 {
     const res=  Joi.validate(inp,joiSchema);

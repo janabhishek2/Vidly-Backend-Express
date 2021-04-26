@@ -36,11 +36,7 @@ const joiSchema={
 function validateSchema(inp)
 {
     const res=  Joi.validate(inp,joiSchema);
-    const objectValidation=mongoose.Types.ObjectId.isValid(inp.customerId) && mongoose.Types.ObjectId.isValid(inp.movieId);
-    if(!objectValidation)
-    {
-        res.error+="ObjectId is not Correct";
-    }
+    
     return res;
 }
 module.exports.Movie=Movie;

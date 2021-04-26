@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const auth=require('../middleware/auth');
 
 const mongoose=require('mongoose');
 const {Genre, validateSchema} =require('../models/genre');
@@ -100,7 +100,9 @@ router.get("/:id", (req, res) => {
 });
 
 
-router.post("/", async (req, res) => {
+router.post("/",auth, async (req, res) => {
+
+  try{
 
   const genre = {
     name : req.body.name
@@ -117,17 +119,19 @@ router.post("/", async (req, res) => {
     const newGenre= new Genre({
       name : genre.name
     });
-    try{
+   
       const result=await newGenre.save();
       console.log(res);
       return res.send(result);
-    }
+  }
+  }
     catch(err)
     {
+      res.status(400).send("bad request");
       console.log(err.message);
     }
     
-  }
+  
 
   /* const length = Genre.count();
   length.then(len=>{
@@ -178,7 +182,7 @@ router.post("/", async (req, res) => {
   } */
 });
 
-router.put("/:id",async (req, res) => {
+router.put("/:id",auth,async (req, res) => {
 
   const genre= await Genre.find({_id : req.params.id});
 
@@ -235,7 +239,7 @@ else
   } */
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id",auth, async (req, res) => {
 
   try{
 

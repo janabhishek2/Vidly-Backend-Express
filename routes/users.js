@@ -4,7 +4,7 @@ const {User,validateSchema}=require('../models/user');
 const _=require('lodash');
 const mongoose=require('mongoose');
 const bcrypt=require('bcryptjs');
-
+const auth=require('../middleware/auth');
 
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
@@ -14,33 +14,14 @@ mongoose.connect('mongodb://localhost/Vidly_Node')
     console.log(err.message);
 });
 
-router.get('/',async (req,res)=>{
+router.get('/me',auth,async (req,res)=>{
     try{
-    const users= await User.find();
-
-    res.send(users);
-    return;
-
-    }
-    catch(err)
-    {
-        console.log(err.message);
-    }
-});
-
-router.get('/:id',async (req,res)=>{
-    try{
-        const user=await User.findById(req.params.id);
-        if(!mongoose.Types.ObjectId.isValid(req.params.id))
-        {
-            res.status(400).send("Invalid Customer Id");
-        }
-        if(!user)
-        {
-            res.status(404).send("User Not Found!");
-        }
-        return res.send(user);
-
+     const user=await User.findById(req.user._id);
+     if(!user)
+     {
+         res.status(404).send("User Not Found!");
+     }
+     res.send(_.pick(user,['name','email','_id']));
     }
     catch(err)
     {

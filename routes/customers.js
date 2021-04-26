@@ -2,7 +2,7 @@ const express=require('express');
 const mongoose=require('mongoose');
 const {Customer,validateSchema}=require('../models/customer');
 const router=express.Router();
-
+const auth=require('../middleware/auth');
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
     console.log("Connected To DB ... ");
@@ -65,7 +65,7 @@ router.get('/:id',async (req,res)=>{
 });
 
 
-router.post('/',async (req,res)=>{
+router.post('/',auth,async (req,res)=>{
 
     try
     {
@@ -100,7 +100,7 @@ catch(err)
 
 });
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id',auth,async (req,res)=>{
 
     try{
         const customer=await Customer.find({_id : req.params.id});
@@ -136,7 +136,7 @@ router.put('/:id',async (req,res)=>{
     }
 });
 
-router.delete('/:id',async (req,res)=>{
+router.delete('/:id',auth,async (req,res)=>{
 
     try{
 

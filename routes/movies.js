@@ -3,6 +3,7 @@ const router=express.Router();
 const {Movie,validateSchema}=require('../models/movie');
 const mongoose=require('mongoose');
 const {Genre}=require('../models/genre');
+const auth=require('../middleware/auth');
 
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
@@ -44,7 +45,7 @@ router.get('/:id',async (req,res)=>{
     }
 })
 
-router.post('/',async (req,res)=>{
+router.post('/',auth,async (req,res)=>{
     try{
         const movie={
             title : req.body.title,
@@ -87,7 +88,7 @@ router.post('/',async (req,res)=>{
     }
 });
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id',auth,async (req,res)=>{
 
     try{
         const movie=await Movie.findById(req.params.id);
@@ -139,7 +140,7 @@ router.put('/:id',async (req,res)=>{
     }
 });
 
-router.delete('/:id',async (req,res)=>{
+router.delete('/:id',auth,async (req,res)=>{
     try{
         const movie=await Movie.findById(req.params.id);
         if(!movie)

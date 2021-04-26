@@ -16,7 +16,6 @@ mongoose.connect('mongodb://localhost/Vidly_Node')
 
 router.post('/',async (req,res)=>{
     try{
-      
         const {error}=validate(req.body);
         if(error)
         {

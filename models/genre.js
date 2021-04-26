@@ -19,12 +19,8 @@ const genreSchema=new mongoose.Schema({
   
   function validateSchema(inp) {
 
-    const res=  Joi.validate(inp,joiSchema);
-    const objectValidation=mongoose.Types.ObjectId.isValid(inp.customerId) && mongoose.Types.ObjectId.isValid(inp.movieId);
-    if(!objectValidation)
-    {
-        res.error+="ObjectId is not Correct";
-    }
+    const res=  Joi.validate(inp,schema);
+
     return res;
   }
 

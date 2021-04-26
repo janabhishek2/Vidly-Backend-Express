@@ -5,7 +5,7 @@ const express=require('express');
 const { Customer } = require('../models/customer');
 const { Movie } = require('../models/movie');
 const router=express.Router();
-
+const auth=require('../middleware/auth');
 
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
@@ -15,7 +15,7 @@ mongoose.connect('mongodb://localhost/Vidly_Node')
     console.log(err.message);
 });
 
-router.get('/',async (req,res)=>{
+router.get('/',auth,async (req,res)=>{
     try{
         const rentals=await Rental.find();
 
@@ -28,8 +28,12 @@ router.get('/',async (req,res)=>{
     }
 });
 
-router.get('/:id',async (req,res)=>{
+router.get('/:id',auth,async (req,res)=>{
     try{
+        if(!mongoose.Types.ObjectId.isValid(req.params.id))
+        {
+            return res.status(400).send("Invalid Movie Id");
+        }
         const rental=await Rental.findById(req.params.id);
 
         if(!rental)
@@ -49,7 +53,7 @@ router.get('/:id',async (req,res)=>{
     }
 });
 
-router.post('/',async (req,res)=>{
+router.post('/',auth,async (req,res)=>{
     try{
         const rental={
             customerId:req.body.customerId,
@@ -105,5 +109,38 @@ router.post('/',async (req,res)=>{
         return;
     }
 });
+router.put('/:id',async (req,res)=>{
+
+   
+        const rental=await Rental.findById(req.params.id);
+        if(!rental)
+        {
+            res.status(404).send("Rental Not Found !");
+            return;
+        }
+        const {error}=validateSchema(req.body);
+        if(error)
+        {
+            return res.status(400).send("Bad Request");
+        }
+        if(rental.returned==true)
+        {
+            return res.status(400).send("Movie Already Returned !");
+        }
+        if(req.body.returned==true && rental.returned==false)
+        {
+            rental.returned=true;
+            const today=new Date();
+            rental.dateReturned=today;
+            const days=(today.getTime()-rental.dateOut)/(1000*60*60*24);
+            const money=days*rental.rentalRate;
+            rental.incomeFromRental=money;
+        }
+
+        await rental.save();
+        return res.send(rental);
+
+    
+})
 
 module.exports=router;
