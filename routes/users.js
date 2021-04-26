@@ -77,7 +77,8 @@ router.post('/',async (req,res)=>{
         newUser.password=hashed;
 
         await newUser.save();
-        res.send(_.pick(newUser,['_id','name','email']));
+        const token=newUser.generateAuthToken();
+        res.header('x-auth-token',token).send(_.pick(newUser,['_id','name','email']));
         return;
     }
     catch(err)

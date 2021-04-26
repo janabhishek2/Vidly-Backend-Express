@@ -4,8 +4,7 @@ const {User}=require('../models/user');
 const router=express.Router();
 const Joi=require('joi');
 const bcrypt=require('bcryptjs');
-const jwt=require('jsonwebtoken');
-const config=require('config');
+
 
 mongoose.connect('mongodb://localhost/Vidly_Node')
 .then(res=>{
@@ -33,7 +32,7 @@ router.post('/',async (req,res)=>{
         {
             return res.status(400).send("Invalid Email or password");
         }
-          const token=  jwt.sign({_id : user._id, name :user.name},config.get('jwtPrivateKey'));
+        const token= user.generateAuthToken();
         res.send(token);
     }
     catch(err)
