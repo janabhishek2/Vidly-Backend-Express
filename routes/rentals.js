@@ -109,7 +109,7 @@ router.post('/',auth,async (req,res)=>{
         return;
     }
 });
-router.put('/:id',async (req,res)=>{
+router.put('/:id',auth,async (req,res)=>{
 
    
         const rental=await Rental.findById(req.params.id);
@@ -141,6 +141,7 @@ router.put('/:id',async (req,res)=>{
         return res.send(rental);
 
     
-})
+});
+
 
 module.exports=router;

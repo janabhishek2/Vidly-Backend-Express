@@ -28,7 +28,7 @@ async function oneTime()
     }
 }
 
-router.get('/',async (req,res)=>{
+router.get('/',auth,async (req,res)=>{
 
     try{
         const customers=await Customer.find();
@@ -42,7 +42,7 @@ router.get('/',async (req,res)=>{
 
 });
 
-router.get('/:id',async (req,res)=>{
+router.get('/:id',auth,async (req,res)=>{
 
     try{
         const customer=await Customer.find({_id : req.params.id});

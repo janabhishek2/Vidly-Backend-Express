@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const auth=require('../middleware/auth');
+const admin=require('../middleware/admin');
 
 const mongoose=require('mongoose');
 const {Genre, validateSchema} =require('../models/genre');
@@ -68,25 +69,25 @@ router.get("/", (req, res) => {
 
 });
 
-router.get("/:id", (req, res) => {
-
-  Genre.find({_id : req.params.id})
-  .then(genre=>{
+router.get('/:id',async (req,res)=>{
+  try{
+    if(!mongoose.Types.ObjectId.isValid(req.params.id))
+    {
+      res.status(400).send("Invalid Genre ID");
+    }
+    const genre=await Genre.findById(req.params.id);
     if(!genre)
     {
-      res.status(404).send("Genre Not Found !");
-      return;
+      res.status(404).send("Genre not found");
     }
-  
-    else
-    {
-      res.send(genre);
-    }  
-  })
-  .catch(err=>{
+    res.send(genre);
+    return;
+  }
+  catch(err)
+  {
     console.log(err.message);
-  })
-  ;
+  }
+});
 
  
   /* const genre = genres.find((g) => {
@@ -97,10 +98,10 @@ router.get("/:id", (req, res) => {
   } else {
     res.send(genre);
   } */
-});
 
 
-router.post("/",auth, async (req, res) => {
+
+router.post("/",[auth,admin], async (req, res) => {
 
   try{
 
@@ -184,7 +185,11 @@ router.post("/",auth, async (req, res) => {
 
 router.put("/:id",auth,async (req, res) => {
 
-  const genre= await Genre.find({_id : req.params.id});
+  if(!mongoose.Types.ObjectId.isValid(req.params.id))
+    {
+      return res.status(400).send("Invalid Genre ID");
+    }
+  const genre= await Genre.findById(req.params.id);
 
   if(!genre)
   {
@@ -239,11 +244,14 @@ else
   } */
 });
 
-router.delete("/:id",auth, async (req, res) => {
+router.delete("/:id",[auth,admin], async (req, res) => {
 
   try{
-
-    const genre = await Genre.find({_id :req.params.id});
+    if(!mongoose.Types.ObjectId.isValid(req.params.id))
+    {
+      res.status(400).send("Invalid Genre ID");
+    }
+    const genre = await Genre.findById(req.params.id);
   
 
   if(!genre)
@@ -252,8 +260,8 @@ router.delete("/:id",auth, async (req, res) => {
   }
   else
   {
-    const result= await Genre.findByIdAndDelete(req.params.id);
-    console.log(result);
+   await Genre.findByIdAndDelete(req.params.id);
+  
     return res.send(genre);
   }
   }
