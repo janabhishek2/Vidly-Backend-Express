@@ -14,15 +14,6 @@ const genres = [
   { id: 5, name: "Romance" },
 ];
 
-mongoose
-  .connect("mongodb://localhost/Vidly_Node")
-  .then((res) => {
-    console.log("Connected to db ... ");
-  })
-  .catch((err) => {
-    console.log(err.message);
-  });
-
 async function oneTime() {
   //call me to reset genres collection
 

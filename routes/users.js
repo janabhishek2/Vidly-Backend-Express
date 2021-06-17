@@ -6,15 +6,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const auth = require("../middleware/auth");
 
-mongoose
-  .connect("mongodb://localhost/Vidly_Node")
-  .then((res) => {
-    console.log("Connected to DB...");
-  })
-  .catch((err) => {
-    console.log(err.message);
-  });
-
 router.get("/", async (req, res) => {
   try {
     const users = await User.find();

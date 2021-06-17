@@ -10,15 +10,6 @@ const { User } = require("../models/user");
 const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(process.env.stripeSecretKey);
 
-mongoose
-  .connect("mongodb://localhost/Vidly_Node")
-  .then((res) => {
-    console.log("Connected To DB ... ");
-  })
-  .catch((err) => {
-    console.log(err.message);
-  });
-
 router.get("/", async (req, res) => {
   try {
     const rentals = await Rental.find();

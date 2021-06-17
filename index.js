@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 
 const app = express();
 require("dotenv").config();
@@ -15,6 +16,15 @@ if (!process.env.jwtPrivateKey) {
   console.error("jwtPrivateKey not set !");
   process.exit(1);
 }
+mongoose
+  .connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then((res) => {
+    console.log("Connected to DB...");
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
+
 app.use(express.json());
 
 app.use(function (req, res, next) {

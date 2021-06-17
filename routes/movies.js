@@ -6,15 +6,6 @@ const { Genre } = require("../models/genre");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 
-mongoose
-  .connect("mongodb://localhost/Vidly_Node")
-  .then((res) => {
-    console.log("Connected To DB ... ");
-  })
-  .catch((err) => {
-    console.log(err.message);
-  });
-
 router.get("/", async (req, res) => {
   try {
     const movies = await Movie.find();
