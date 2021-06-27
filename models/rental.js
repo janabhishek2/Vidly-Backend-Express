@@ -5,6 +5,7 @@ const { userSchema } = require("./user");
 const rentalSchema = new mongoose.Schema({
   user: {
     type: new mongoose.Schema({
+      _id: mongoose.Schema.Types.ObjectId,
       email: {
         type: String,
         required: true,
@@ -16,6 +17,7 @@ const rentalSchema = new mongoose.Schema({
   },
   movie: {
     type: new mongoose.Schema({
+      _id: mongoose.Schema.Types.ObjectId,
       title: {
         type: String,
         required: true,
@@ -53,20 +55,34 @@ const rentalSchema = new mongoose.Schema({
     maxlength: 10,
     required: true,
   },
-  uuidKey: {
-    type: String,
-    maxlength: 256,
-    required: true,
-  },
 
   description: {
     type: String,
     maxlength: 256,
     required: true,
   },
-  userIP: {
+  customerPaymentId: {
     type: String,
     required: true,
+  },
+  paymentMethodId: {
+    type: String,
+    required: true,
+  },
+  paymentMethodName: {
+    type: String,
+    required: true,
+  },
+  rating: {
+    type: Number,
+    min: 0,
+    max: 5,
+  },
+  comments: {
+    type: String,
+    minlength: 0,
+    maxlength: 100,
+    default: "",
   },
 });
 

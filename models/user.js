@@ -76,6 +76,14 @@ const userSchema = new mongoose.Schema({
     maxlength: 6,
     default: "",
   },
+  customerId: {
+    type: String,
+    default: "",
+  },
+  avtar: {
+    type: String,
+    default: "",
+  },
 });
 
 userSchema.methods.generateAuthToken = function () {
@@ -110,6 +118,8 @@ const updateSchema = {
   city: Joi.string().min(0).max(20).allow(null).allow(""),
   zip: Joi.string().min(0).max(6).allow(null).allow(""),
   country: Joi.string().min(0).max(20).allow(null).allow(""),
+  customerId: Joi.string().allow(null).allow(""),
+  avtar: Joi.allow(null).allow(""),
 };
 function validateSchema(inp) {
   return Joi.validate(inp, joiSchema);

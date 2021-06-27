@@ -7,8 +7,9 @@ const customers = require("./routes/customers");
 const genres = require("./routes/genres");
 const movies = require("./routes/movies");
 const rentals = require("./routes/rentals");
-
+const paymentMethods = require("./routes/paymentMethods");
 const users = require("./routes/users");
+const coupons = require("./routes/coupons");
 const auth = require("./routes/auth");
 const config = require("config");
 
@@ -17,7 +18,10 @@ if (!process.env.jwtPrivateKey) {
   process.exit(1);
 }
 mongoose
-  .connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect("mongodb://localhost:27017/Vidly_Node", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then((res) => {
     console.log("Connected to DB...");
   })
@@ -41,7 +45,10 @@ app.use("/api/genres", genres);
 app.use("/api/movies", movies);
 app.use("/api/rentals", rentals);
 app.use("/api/users", users);
+app.use("/api/coupons", coupons);
+app.use("/api/paymentMethods", paymentMethods);
 app.use("/api/auth", auth);
+app.use("/images", express.static("images"));
 
 app.get("/", (req, res) => {
   res.send("Ok");

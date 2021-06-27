@@ -9,6 +9,7 @@ const auth = require("../middleware/auth");
 const { User } = require("../models/user");
 const { v4: uuidv4 } = require("uuid");
 const stripe = require("stripe")(process.env.stripeSecretKey);
+const { Coupon } = require("../models/coupon");
 
 router.get("/", async (req, res) => {
   try {
@@ -20,7 +21,31 @@ router.get("/", async (req, res) => {
     return;
   }
 });
+router.get("/getPaymentIntent", async (req, res) => {
+  const user = await User.findById(req.body.userId);
+  const movie = await Movie.findById(req.body.movieId);
 
+  if (!user || !movie) {
+    return res.status(404).send("Customer or movie not found!");
+  }
+  let retDate = new Date();
+  retDate = retDate.setDate(retDate.getDate() + 30);
+
+  const customer = await stripe.customers.create();
+
+  // Create a PaymentIntent with the order amount and currency
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    customer: customer.id,
+
+    setup_future_usage: "off_session",
+
+    amount: movie.dailyRentalRate * 30,
+
+    currency: "inr",
+  });
+  res.send(paymentIntent.client_secret);
+});
 router.get("/user/:id", async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -54,7 +79,68 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/create-payment-intent", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.userId);
+    const movie = await Movie.findById(req.body.movieId);
+
+    if (!user || !movie) {
+      return res.status(404).send("Customer or movie not found!");
+    }
+    if (movie.numberInStock == 0) {
+      return res.status(404).send("Movie Out Of stock..");
+    }
+    let retDate = new Date();
+    retDate = retDate.setDate(retDate.getDate() + 30);
+
+    if (user.customerId == "") {
+      const customer = await stripe.customers.create({
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      });
+      user.customerId = customer.id;
+
+      await user.save();
+      const paymentIntent = await stripe.paymentIntents.create({
+        customer: customer.id,
+
+        setup_future_usage: "off_session",
+
+        amount: movie.dailyRentalRate * 30 * 100,
+
+        currency: "inr",
+        payment_method_types: ["card"],
+      });
+      const ans = paymentIntent.client_secret;
+
+      res.send(ans);
+    } else {
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: user.customerId,
+        type: "card",
+      });
+      console.log("Payment Method", paymentMethods);
+      const paymentIntent = await stripe.paymentIntents.create({
+        customer: user.customerId,
+
+        setup_future_usage: "off_session",
+
+        amount: movie.dailyRentalRate * 30 * 100,
+
+        currency: "inr",
+      });
+      console.log("payment intent", paymentIntent);
+      const ans = paymentIntent.client_secret;
+
+      res.send(ans);
+    }
+  } catch (err) {
+    console.log(err.message);
+  }
+});
+
+router.post("/createRental", async (req, res) => {
   try {
     /*  const { error } = validateSchema(req.body);
     if (error) {
@@ -74,42 +160,6 @@ router.post("/", async (req, res) => {
     let retDate = new Date();
     retDate = retDate.setDate(retDate.getDate() + 30);
 
-    const idempotency_key = uuidv4();
-    const { token } = req.body;
-
-    const customer = await stripe.customers.create({
-      email: token.email,
-      source: token.id,
-    });
-    token.card.address_line1 = user.addr1;
-    token.card.address_line2 = user.addr1;
-    token.card.address_city = user.city;
-    token.card.address_country = user.country;
-    token.card.address_zip = user.zip;
-    console.log(token);
-    const charge = await stripe.charges.create(
-      {
-        amount: movie.dailyRentalRate * 30 * 100,
-        currency: "inr",
-        customer: customer.id,
-        receipt_email: token.email,
-        description: `Purchased the ${movie.title}`,
-        shipping: {
-          name: token.card.name,
-          address: {
-            line1: token.card.address_line1,
-            line2: token.card.address_line2,
-            city: token.card.address_city,
-            country: token.card.address_country,
-            postal_code: token.card.address_zip,
-          },
-        },
-      },
-      {
-        idempotencyKey: idempotency_key,
-      }
-    );
-    console.log(charge);
     const newRental = new Rental({
       user: {
         _id: user._id,
@@ -124,59 +174,166 @@ router.post("/", async (req, res) => {
       expiresOn: retDate,
       incomeFromRental: movie.dailyRentalRate * 30,
       currency: "inr",
-      uuidKey: idempotency_key.toString(),
+
       description: `Purchased the ${movie.title}`,
-      userIP: token.client_ip.toString(),
+      customerPaymentId: user.customerId,
+      paymentMethodId: req.body.paymentMethodId,
+      paymentMethodName: req.body.paymentMethodName,
     });
 
-    if (movie.numberInStock == 0) {
-      return res.status(400).send("Movie not in stock");
-    }
     const ans = await newRental.save();
-    res.send(ans);
 
     movie.numberInStock--;
     const ans1 = await movie.save();
 
     user.numOrders++;
     await user.save();
-    return;
+    //coupon code
+    if (user.numOrders % 20 == 0) {
+      let rentals = await Rental.find();
+      rentals = rentals.filter((rental) => {
+        return rental.user._id == req.body.userId;
+      });
+
+      let total = 0;
+      rentals.forEach((rental) => {
+        total += rental.incomeFromRental;
+      });
+      total /= rentals.length;
+
+      //validate input
+
+      const currDate = new Date();
+      const ext = new Date();
+      ext.setDate(currDate.getDate() + 60);
+
+      //create data for model
+      const coupon = new Coupon({
+        userId: user._id,
+        value: total,
+        issuedOn: currDate,
+        expiry: ext,
+      });
+
+      const out = await coupon.save();
+      return res.status(200).send(out);
+    }
+
+    return res.status(200).send(ans);
   } catch (err) {
     console.log(err.message);
     return;
   }
 });
-/* router.put("/:id", async (req, res) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).send("Invalid Renatal");
-    }
-    const rental = await Rental.findById(req.params.id);
-    if (!rental) {
-      res.status(404).send("Rental Not Found !");
-      return;
-    }
-    const { error } = validateSchema(req.body);
-    if (error) {
-      return res.status(400).send("Bad Request");
-    }
-    if (rental.returned == true) {
-      return res.status(400).send("Movie Already Returned !");
-    }
-    if (req.body.returned == true && rental.returned == false) {
-      rental.returned = true;
-      const today = new Date();
-      rental.dateReturned = today;
-      const days = (today.getTime() - rental.dateOut) / (1000 * 60 * 60 * 24);
-      const money = days * rental.rentalRate;
-      rental.incomeFromRental = money;
-    }
 
-    await rental.save();
-    return res.send(rental);
+router.post("/freeRental", async (req, res) => {
+  try {
+    const user = await User.findById(req.body.userId);
+    const movie = await Movie.findById(req.body.movieId);
+    const coupon = await Coupon.findById(req.body.couponId);
+
+    if (!user || !movie) {
+      return res.status(404).send("Customer or movie not found!");
+    }
+    let retDate = new Date();
+    retDate = retDate.setDate(retDate.getDate() + 30);
+
+    const newRental = new Rental({
+      user: {
+        _id: user._id,
+        email: user.email,
+      },
+      movie: {
+        _id: movie._id,
+        title: movie.title,
+        dailyRentalRate: movie.dailyRentalRate,
+      },
+      rentalRate: 0,
+      expiresOn: retDate,
+      incomeFromRental: 0,
+      currency: "inr",
+
+      description: `Used Coupon for ${movie.title}`,
+      customerPaymentId: coupon._id,
+      paymentMethodId: coupon._id,
+      paymentMethodName: "Coupon",
+    });
+
+    const ans = await newRental.save();
+    res.send(ans);
+
+    movie.numberInStock--;
+    await movie.save();
+
+    return;
   } catch (err) {
     console.log(err.message);
+    res.status(500).send("Something went wrong !");
   }
-}); */
+});
+router.put("/:id", async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      res.status(400).send("Invalid Rental Id");
+      return;
+    } else {
+      ///change rating and comments only(updated movie model as well)
 
+      const rental = await Rental.findById(req.params.id);
+      if (!rental) {
+        return res.status(404).send("Rental Not Found!");
+      }
+      rental.rating = req.body.rating;
+      rental.comments = req.body.comments;
+
+      await rental.save();
+      const movieId = rental.movie._id;
+      const userId = rental.user._id;
+
+      const movie = await Movie.findById(movieId);
+      const user = await User.findById(userId);
+      if (!movie || !user) {
+        res.status(404).send("Movie Not Found !");
+        return;
+      }
+      const newRating = {
+        rentalId: rental._id,
+        userId: userId,
+        value: req.body.rating,
+        comments: req.body.comments,
+        userAvtar: user.avtar,
+        userName: user.name,
+      };
+
+      const existingRating = movie.ratings.find((rating) => {
+        return rating.rentalId.toString() == rental._id.toString();
+      });
+
+      if (existingRating) {
+        const index = movie.ratings.indexOf(existingRating);
+        movie.ratings[index] = newRating;
+        let recalculatedRating = 0;
+        movie.ratings.forEach((rating) => {
+          recalculatedRating += rating.value;
+        });
+        recalculatedRating = recalculatedRating / movie.ratings.length;
+        movie.overallRating = recalculatedRating;
+        await movie.save();
+        return res.status(200).send("Movie Updated !");
+      }
+      movie.ratings.push(newRating);
+      let recalculatedRating = 0;
+      movie.ratings.forEach((rating) => {
+        recalculatedRating += rating.value;
+      });
+      recalculatedRating = recalculatedRating / movie.ratings.length;
+      movie.overallRating = recalculatedRating;
+      await movie.save();
+      return res.status(200).send("Movie Updated !");
+    }
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).send("Something Went Wrong !");
+  }
+});
 module.exports = router;

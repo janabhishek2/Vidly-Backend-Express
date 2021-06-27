@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
 const { User, validateSchema, validateSchemaPut } = require("../models/user");
 const _ = require("lodash");
 const mongoose = require("mongoose");
@@ -69,11 +70,20 @@ router.post("/", async (req, res) => {
     return;
   }
 });
-
-router.put("/:id", async (req, res) => {
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./images/users");
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage: diskStorage });
+router.put("/:id", upload.single("avtar"), async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).send("Invalid User Id");
   }
+  console.log(req.file);
 
   try {
     const user = await User.findById(req.params.id);
@@ -90,6 +100,9 @@ router.put("/:id", async (req, res) => {
       properties.forEach((property) => {
         user[property] = req.body[property];
       });
+      if (req.file != undefined && req.file.filename != "") {
+        user.avtar = req.file.path;
+      }
       const result = await user.save();
       console.log(result);
       res.send(result);
